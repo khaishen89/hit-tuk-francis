@@ -15,12 +15,6 @@
       background: #fdf2f8;
       cursor: none;
     }
-    @keyframes float {
-      0%, 100% { transform: translateY(0px); }
-      50% { transform: translateY(-10px); }
-    }
-    .floating { animation: float 3s ease-in-out infinite; }
-    
     #hammer-cursor {
       position: fixed;
       pointer-events: none;
@@ -36,15 +30,15 @@
     }
     .hammer-inner.swing { transform: rotate(-45deg); }
 
+    @keyframes clock-pulse {
+      0% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.1); opacity: 0.8; color: #f43f5e; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .animate-clock { animation: clock-pulse 1s infinite cubic-bezier(0.4, 0, 0.6, 1); }
+    
     button, .cursor-pointer { cursor: none !important; }
     .perspective-1000 { perspective: 1000px; }
-
-    @keyframes clock-tick {
-      0% { transform: scale(1); }
-      50% { transform: scale(1.1); color: #ef4444; }
-      100% { transform: scale(1); }
-    }
-    .animate-tick { animation: clock-tick 1s infinite; }
   </style>
 <script type="importmap">
 {
