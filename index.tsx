@@ -103,7 +103,9 @@ const App = () => {
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [isSwinging, setIsSwinging] = useState(false);
 
-  // Mouse handler
+  // Use a ref for the timer to avoid dependency issues
+  const timerId = useRef<number | null>(null);
+
   useEffect(() => {
     const onMove = (e: MouseEvent) => setMousePos({ x: e.clientX, y: e.clientY });
     const onDown = () => { setIsSwinging(true); setTimeout(() => setIsSwinging(false), 150); };
@@ -119,6 +121,7 @@ const App = () => {
     setIsPlaying(false);
     setIsGameOver(true);
     setHrReport(HR_BRIEFINGS[Math.floor(Math.random() * HR_BRIEFINGS.length)]);
+    if (timerId.current) clearInterval(timerId.current);
   }, []);
 
   const startGame = useCallback(() => {
@@ -131,24 +134,34 @@ const App = () => {
     setActiveQuotes(new Array(9).fill(undefined));
   }, []);
 
-  // MASTER TIMER
+  // MASTER TIMER - Bulletproof Implementation
   useEffect(() => {
-    let interval: number;
-    if (isPlaying && timeLeft > 0) {
-      interval = window.setInterval(() => {
-        setTimeLeft(t => t - 1);
+    if (isPlaying) {
+      // Clear any existing timer just in case
+      if (timerId.current) clearInterval(timerId.current);
+      
+      timerId.current = window.setInterval(() => {
+        setTimeLeft((prev) => {
+          if (prev <= 1) {
+            // Use a slight delay to ensure the UI shows 0 before ending
+            setTimeout(endGame, 10);
+            return 0;
+          }
+          return prev - 1;
+        });
       }, 1000);
-    } else if (timeLeft === 0 && isPlaying) {
-      endGame();
+    } else {
+      if (timerId.current) clearInterval(timerId.current);
     }
-    return () => clearInterval(interval);
-  }, [isPlaying, timeLeft, endGame]);
+    
+    return () => { if (timerId.current) clearInterval(timerId.current); };
+  }, [isPlaying, endGame]);
 
   // SPAWNING SYSTEM
   useEffect(() => {
-    let interval: number;
+    let spawnInterval: number;
     if (isPlaying) {
-      interval = window.setInterval(() => {
+      spawnInterval = window.setInterval(() => {
         const idx = Math.floor(Math.random() * 9);
         setVisibleTuks(prev => { const next = [...prev]; next[idx] = true; return next; });
         setActiveQuotes(prev => { const next = [...prev]; next[idx] = QUOTES[Math.floor(Math.random() * QUOTES.length)]; return next; });
@@ -158,7 +171,7 @@ const App = () => {
         }, 1100);
       }, 800);
     }
-    return () => clearInterval(interval);
+    return () => clearInterval(spawnInterval);
   }, [isPlaying]);
 
   const handleHit = useCallback((index: number) => {
@@ -194,7 +207,7 @@ const App = () => {
           </div>
           <div className="text-center">
             <span className="text-[10px] uppercase text-gray-400 font-black block tracking-tighter">Deadline</span>
-            <span className={`text-3xl font-black tabular-nums transition-all ${isPlaying ? 'text-indigo-700 animate-tick' : 'text-gray-300'}`}>
+            <span className={`text-3xl font-black tabular-nums transition-all ${isPlaying ? 'text-rose-600 animate-clock' : 'text-gray-300'}`}>
               {timeLeft}s
             </span>
           </div>
@@ -241,7 +254,7 @@ const App = () => {
       </main>
       
       <footer className="mt-12 text-indigo-400/50 text-[10px] font-black uppercase tracking-[0.3em] text-center z-10">
-        BOSS TERMINAL v1.0.5 • HAVE A NICE DAY, EE LING BOSS!
+        BOSS TERMINAL v1.1.0 • HAVE A NICE DAY, EE LING BOSS!
       </footer>
     </div>
   );
